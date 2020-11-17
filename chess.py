@@ -158,7 +158,7 @@ class Pieces:
                 if i != 0:
                     r = True
                     v = self.y1
-                    # making sure that rook isn't jumpint over any pieces
+                    # making sure that rook isn't jumping over any pieces
                     while v != self.y1 + i:
                         if v != self.y1 and board[v][self.x1][0] != '_':
                             r = False
@@ -172,12 +172,55 @@ class Pieces:
                         moves.append(str(self.x1) + str(self.y1 + i))
         return moves
 
+
+    # still needs debugging
+    # bishop is jumping over pieces
     def bishop(self):
 
+        moves = []
+
+        for i in range(-7,8):
+            if 0 <= self.x1 + i <= 7 and 0 <= self.y1 + i <= 7:
+            # staying in the same position isn't a move
+                if i != 0:
+                    # moving diagonally down right (+1,+1)
+                    p = True
+                    # nwse is north west, south east represents the possible diagonal movements
+                    nwse = self.x1
+                    while nwse != self.x1 + i:
+                        # making sure that bishop doesn't jump over pieces
+                        if nwse != self.x1 and board[self.y1 + i][nwse][0] != '_':
+                            p = False
+                        if i > 0:
+                            nwse += 1
+                        else:
+                            nwse -= 1
+                    if p == True and board[self.y1 + i][self.x1 + i][0] != self.color:
+                        moves.append(str(str(self.x1 + i) + str(self.y1 + i)))
+
+            if 0 <= self.x1 + i <= 7 and 0 <= self.y1 - i <= 7:
+                if i != 0:
+                    n = True
+                    # nesw is north east, south west, represents the other possible movements
+                    nesw = self.x1
+                    while nesw != self.x1 + i:
+                        # making sure that bishop doesn't jump over pieces
+                        if nesw != self.x1 and board[self.y1 - i][nesw][0] != '_':
+                            n = False
+                        if i > 0:
+                            nesw += 1
+                        else:
+                            nesw -= 1
+                    # making sure that it doesn't eat pieces of same color
+                    if n == True and board[self.y1 - i][self.x1 + i][0] != self.color:
+                        moves.append(str(str(self.x1 + i) + str(self.y1 - i)))
+        print(moves)
+        return moves
 
 
-
-
+    def queen(self):
+        move = self.bishop() + self.rook()
+        return move
 
     # helper that will be used in the main movePiece function
     # basically moves the pieces
@@ -214,10 +257,15 @@ class Pieces:
             R = self.rook()
             self.move('R',R)
 
-        # code used for debugging
-        if self.piece[1] != 'k' and self.piece[1] != 'P' and self.piece[1] != 'K' and self.piece[1] != 'R':
-            board[self.y1][self.x1] = '__'
-            board[self.y2][self.x2] = self.piece
+        # bishop
+        if self.piece[1] == 'B':
+            B = self.bishop()
+            self.move('B',B)
+
+        # queen
+        if self.piece[1] == 'Q':
+            Q = self.queen()
+            self.move('Q',Q)
 
 
 # far from complete code

@@ -55,26 +55,26 @@ class Pieces:
         if (self.y1 == 1 and plr == -1) or (self.y1 == 6 and plr == 1):
             # making sure that the square in front is empty
             if board[self.y1-plr][self.x1] == '__':
-                moves.append(int(str(self.x1) + str(self.y1-plr)))
+                moves.append(str(self.x1) + str(self.y1-plr))
                 # making sure that 2 squares are empty so it can move there
                 if board[self.y1-2*plr][self.x1] == '__':
-                    moves.append(int(str(self.x1)+str(self.y1-2*plr)))
+                    moves.append(str(self.x1) + str(self.y1-2*plr))
 
         # pawn isn't in the start position
         else:
             # if square in front is empty, the piece can move there
             # also check for border cases
             if self.y1 != 0 and self.y1 != 7 and board[self.y1-plr][self.x1] == '__':
-                moves.append(int(str(self.x1) + str(self.y1-plr)))
+                moves.append(str(self.x1) + str(self.y1-plr))
 
         # pawn can eat diagonally
         # check for border cases
         # can only move diagonally if there is a piece of opposing color there
         if self.x1 != 0 and board[self.y1-plr][self.x1-1][0] != self.color and board[self.y1-plr][self.x1-1][0] != '_':
-            moves.append(int(str(self.x1-1) + str(self.y1-plr)))
+            moves.append(str(self.x1-1) + str(self.y1-plr))
 
         if self.x1 != 7 and board[self.y1-plr][self.x1+1][0] != self.color and board[self.y1-plr][self.x1+1][0] != '_':
-            moves.append(int(str(self.x1+1) + str(self.y1-plr)))
+            moves.append(str(self.x1+1) + str(self.y1-plr))
 
         return moves
 
@@ -85,29 +85,29 @@ class Pieces:
         # moving one square up or down and 2 squares to the right or left
         # accounting for all border cases
         if self.y1 != 7 and self.x1 < 6 and board[self.y1 + 1][self.x1 + 2] != self.color:
-            moves.append(int(str(self.x1 + 2) + str(self.y1 + 1)))
+            moves.append(str(self.x1 + 2) + str(self.y1 + 1))
 
         if self.y1 != 7 and self.x1 > 1 and board[self.y1 + 1][self.x1 - 2] != self.color:
-            moves.append(int(str(self.x1 - 2) + str(self.y1 + 1)))
+            moves.append(str(self.x1 - 2) + str(self.y1 + 1))
 
         if self.y1 != 0 and self.x1 < 6 and board[self.y1 - 1][self.x1 + 2] != self.color:
-            moves.append(int(str(self.x1 + 2) + str(self.y1 - 1)))
+            moves.append(str(self.x1 + 2) + str(self.y1 - 1))
 
         if self.y1 != 0 and self.x1 > 2 and board[self.y1 - 1][self.x1 - 2] != self.color:
-            moves.append(int(str(self.x1 - 2) + str(self.y1 - 1)))
+            moves.append(str(self.x1 - 2) + str(self.y1 - 1))
 
         # moving 2 squares up or down and 1 square to the right or left
         if self.x1 != 7 and self.y1 < 6 and board[self.y1 + 2][self.x1 + 1] != self.color:
-            moves.append(int(str(self.x1 + 1) + str(self.y1 + 2)))
+            moves.append(str(self.x1 + 1) + str(self.y1 + 2))
 
         if self.x1 != 7 and self.y1 > 1 and board[self.y1 - 2][self.x1 + 1] != self.color:
-            moves.append(int(str(self.x1 + 1) + str(self.y1 - 2)))
+            moves.append(str(self.x1 + 1) + str(self.y1 - 2))
 
         if self.x1 != 0 and self.y1 < 6 and board[self.y1 + 2][self.x1 - 1] != self.color:
-            moves.append(int(str(self.x1 - 1) + str(self.y1 + 2)))
+            moves.append(str(self.x1 - 1) + str(self.y1 + 2))
 
         if self.x1 != 0 and self.y1 > 1 and board[self.y1 - 2][self.x1 - 1] != self.color:
-            moves.append(int(str(self.x1 - 1) + str(self.y1 - 1)))
+            moves.append(str(self.x1 - 1) + str(self.y1 - 2))
 
         return moves
 
@@ -125,11 +125,57 @@ class Pieces:
                     # accounting for border cases
                     if 0 <= self.x1 + i <= 7 and 0 <= self.y1 + j <= 7:
                         # making sure that king can't eat pieces from the same color
-                        if board[self.x1 + i][self.y1 + j][0] != self.color:
-                            print(board[self.x1 + i][self.y1 + j][0],'color :' + self.color)
-                            moves.append(int(str(self.x1 + i) + str(self.y1 + j)))
-        print(moves)
+                        if board[self.y1 + j][self.x1 + i][0] != self.color:
+                            moves.append(str(self.x1 + i) + str(self.y1 + j))
         return moves
+
+    def rook(self):
+        # list of all possible moves
+        moves = []
+        for i in range(-7,8):
+            # accounting for border cases
+            if 0 <= self.x1 + i <= 7:
+                # if rook moves horizontally
+                if i != 0:
+                    p = True
+                    h = self.x1
+                    # making sure that rook isn't jumping over any pieces
+                    while h != self.x1 + i:
+                        if h != self.x1 and board[self.y1][h][0] != '_':
+                            p = False
+                        if i > 0:
+                            h += 1
+                        elif i < 0:
+                            h -= 1
+                    # adding horizontal moves if rook isn't eating pieces from same color
+                    # and isn't jumping over pieces
+                    if p == True and board[self.y1][self.x1 + i][0] != self.color:
+                        moves.append(str(self.x1 + i) + str(self.y1))
+
+            # accounting for border cases
+            if 0 <= self.y1 + i <= 7:
+                # if rook moves vertically
+                if i != 0:
+                    r = True
+                    v = self.y1
+                    # making sure that rook isn't jumpint over any pieces
+                    while v != self.y1 + i:
+                        if v != self.y1 and board[v][self.x1][0] != '_':
+                            r = False
+                        if i > 0:
+                            v += 1
+                        else:
+                            v -= 1
+                    # adding horizontal moves if rook isn't eating pieces from same color
+                    # and isn't jumping over any pieces
+                    if r == True and board[self.y1 + i][self.x1][0] != self.color:
+                        moves.append(str(self.x1) + str(self.y1 + i))
+        return moves
+
+    def bishop(self):
+
+
+
 
 
 
@@ -138,7 +184,7 @@ class Pieces:
     def move(self,piece,function):
         # pawn
         if self.piece[1] == piece:
-            if int(str(self.x2) + str(self.y2)) in function:
+            if (str(self.x2) + str(self.y2)) in function:
                 # move it and change initial position to '__'
                 board[self.y1][self.x1] = '__'
                 # check if a piece was eaten
@@ -163,9 +209,13 @@ class Pieces:
         if self.piece[1] == 'K':
             K = self.king()
             self.move('K',K)
+        # rook
+        if self.piece[1] == 'R':
+            R = self.rook()
+            self.move('R',R)
 
         # code used for debugging
-        if self.piece[1] != 'k' and self.piece[1] != 'P' and self.piece[1] != 'K':
+        if self.piece[1] != 'k' and self.piece[1] != 'P' and self.piece[1] != 'K' and self.piece[1] != 'R':
             board[self.y1][self.x1] = '__'
             board[self.y2][self.x2] = self.piece
 

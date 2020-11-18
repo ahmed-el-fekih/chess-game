@@ -111,7 +111,7 @@ class Pieces:
 
         return moves
 
-    # still not working need to debug
+
     def king(self):
         # list of all possible moves based on the initial position
         moves = []
@@ -173,8 +173,7 @@ class Pieces:
         return moves
 
 
-    # still needs debugging
-    # bishop is jumping over pieces
+
     def bishop(self):
 
         moves = []

@@ -187,30 +187,36 @@ class Pieces:
                     p = True
                     # nwse is north west, south east represents the possible diagonal movements
                     nwse = self.x1
+                    nwseY = self.y1
                     while nwse != self.x1 + i:
                         # making sure that bishop doesn't jump over pieces
-                        if nwse != self.x1 and board[self.y1 + i][nwse][0] != '_':
+                        if nwse != self.x1 and board[nwseY][nwse][0] != '_':
                             p = False
                         if i > 0:
                             nwse += 1
+                            nwseY += 1
                         else:
                             nwse -= 1
+                            nwseY -= 1
                     if p == True and board[self.y1 + i][self.x1 + i][0] != self.color:
                         moves.append(str(str(self.x1 + i) + str(self.y1 + i)))
-
+        for i in range(-7,8):
             if 0 <= self.x1 + i <= 7 and 0 <= self.y1 - i <= 7:
                 if i != 0:
                     n = True
                     # nesw is north east, south west, represents the other possible movements
                     nesw = self.x1
+                    neswY = self.y1
                     while nesw != self.x1 + i:
                         # making sure that bishop doesn't jump over pieces
-                        if nesw != self.x1 and board[self.y1 - i][nesw][0] != '_':
+                        if nesw != self.x1 and board[neswY][nesw][0] != '_':
                             n = False
                         if i > 0:
                             nesw += 1
+                            neswY -= 1
                         else:
                             nesw -= 1
+                            neswY += 1
                     # making sure that it doesn't eat pieces of same color
                     if n == True and board[self.y1 - i][self.x1 + i][0] != self.color:
                         moves.append(str(str(self.x1 + i) + str(self.y1 - i)))

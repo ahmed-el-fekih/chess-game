@@ -2,6 +2,7 @@
 ### Andrew ID: aelfekih
 ### Final Project
 ### Chess
+from tkinter import *
 
 
 
@@ -388,7 +389,59 @@ class Chess:
 
 
 
-chess = Chess()
-chess.run()
+# chess = Chess()
+# chess.run()
+
+########################################################################################
+## GUI
+## User interface test
+
+darkColor = '#58ae8b'
+lightColor = '#feffed'
+class ChessInterface(Chess):
+    def __init__(self,size=60):
+        self.unit = size
+        self.height = self.unit*8
+        self.width = self.unit*8
+        self.wnd = Tk()
+        self.wnd.geometry('490x490')
+        self.pieces = {'bP': '\u265F',
+                       'bK': '\u265A',
+                       'bQ': '\u265B',
+                       'bk': '\u265E',
+                       'bB': '\u265D',
+                       'bR': '\u265C',
+                       'wP': '\u2659',
+                       'wK': '\u2654',
+                       'wQ': '\u2655',
+                       'wk': '\u2658',
+                       'wB': '\u2657',
+                       'wR': '\u2656',
+                       '__': ''
+                       }
+        self.b = [['bR', 'bk', 'bB', 'bQ', 'bK', 'bB', 'bk', 'bR'],
+                      ['bP', 'bP', 'bP', 'bP', 'bP', 'bP', 'bP', 'bP'],
+                      ['__', '__', '__', '__', '__', '__', '__', '__'],
+                      ['__', '__', '__', '__', '__', '__', '__', '__'],
+                      ['__', '__', '__', '__', '__', '__', '__', '__'],
+                      ['__', '__', '__', '__', '__', '__', '__', '__'],
+                      ['wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP'],
+                      ['wR', 'wk', 'wB', 'wQ', 'wK', 'wB', 'wk', 'wR']]
+        self.canvas = Canvas(self.wnd, height=self.height, width=self.width)
+        self.canvas.pack()
+    def draw(self):
+        for i in range(8):
+            for j in range(8):
+                if (i%2 != 1 and j%2 == 1) or ((i%2 == 1 or i%2 == 2) and j%2 != 1):
+                    self.canvas.create_rectangle(i*self.unit, j*self.unit,i*self.unit+self.unit,j*self.unit+self.unit,fill='dark red')
+                else:
+                    self.canvas.create_rectangle(i*self.unit, j*self.unit,i*self.unit+self.unit,j*self.unit+self.unit,fill= lightColor)
+                self.canvas.create_text(i*self.unit+self.unit//2,j*self.unit+self.unit//2,text=self.pieces[self.b[j][i]],font=('DejaVu Sans',self.unit//2))
+    def runTk(self):
+        self.draw()
+        self.wnd.mainloop()
+a = ChessInterface()
+a.runTk()
+
 
 

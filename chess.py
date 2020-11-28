@@ -3,6 +3,7 @@
 ### Final Project
 ### Chess
 from tkinter import *
+from tkinter import messagebox
 
 
 
@@ -17,12 +18,10 @@ class Chess:
                       ['__', '__', '__', '__', '__', '__', '__', '__'],
                       ['wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP'],
                       ['wR', 'wk', 'wB', 'wQ', 'wK', 'wB', 'wk', 'wR']]
-        Chess.printB(self)
-        self.input = input('White make a move: ')
-        self.x1 = int(self.input[0])
-        self.y1 = int(self.input[1])
-        self.x2 = int(self.input[2])
-        self.y2 = int(self.input[3])
+        self.x1 = 0
+        self.y1 = 0
+        self.x2 = 0
+        self.y2 = 0
         # making the board
         # consists of all chess pieces (each has a specific letter)
         # first letter is color second is piece
@@ -55,7 +54,6 @@ class Chess:
             self.player = 'b'
         else:
             self.player = 'w'
-        self.printB()
 
     # printing the board, x and y coords for easier use
     def printB(self):
@@ -313,6 +311,31 @@ class Chess:
         return False
 
 
+    def possibleMoves(self):
+        # pawn
+        if self.piece[1] == 'P':
+            return self.pawn()
+
+        # knight
+        if self.piece[1] == 'k':
+            return self.knight()
+
+        # king
+        if self.piece[1] == 'K':
+            return self.king()
+
+         # rook
+        if self.piece[1] == 'R':
+            return self.rook()
+
+        # bishop
+        if self.piece[1] == 'B':
+            return self.bishop()
+
+        # queen
+        if self.piece[1] == 'Q':
+            return self.queen()
+
     # moves the piece
     def movePiece(self):
         # pawn
@@ -349,8 +372,8 @@ class Chess:
     # should check if the move is valid
     # not working for some reason
     def isValid(self):
-        if self.player != self.color or self.checkmoves() == False:
-            return False
+        if self.player == self.color and self.checkmoves() != False:
+            return True
         return True
 
     # True means the game is done
@@ -375,6 +398,8 @@ class Chess:
     # alternates between white and black while checking for valid moves
     # stops when either king is dead
     def run(self):
+        self.printB()
+        self.getinput()
         while self.done() != True:
             while self.player != self.color or self.checkmoves() == False:
                 print("invalid move")
@@ -384,13 +409,14 @@ class Chess:
             if self.done() == True:
                 break
             self.changePlayer()
+            self.printB()
             self.getinput()
         print('Congratsss!! '+ self.player + ' wins!!')
 
 
 
-# chess = Chess()
-# chess.run()
+#chess = Chess()
+#chess.run()
 
 ########################################################################################
 ## GUI
@@ -400,6 +426,7 @@ darkColor = '#58ae8b'
 lightColor = '#feffed'
 class ChessInterface(Chess):
     def __init__(self,size=60):
+        Chess.__init__(self)
         self.unit = size
         self.height = self.unit*8
         self.width = self.unit*8
@@ -419,29 +446,137 @@ class ChessInterface(Chess):
                        'wR': '\u2656',
                        '__': ''
                        }
-        self.b = [['bR', 'bk', 'bB', 'bQ', 'bK', 'bB', 'bk', 'bR'],
-                      ['bP', 'bP', 'bP', 'bP', 'bP', 'bP', 'bP', 'bP'],
-                      ['__', '__', '__', '__', '__', '__', '__', '__'],
-                      ['__', '__', '__', '__', '__', '__', '__', '__'],
-                      ['__', '__', '__', '__', '__', '__', '__', '__'],
-                      ['__', '__', '__', '__', '__', '__', '__', '__'],
-                      ['wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP'],
-                      ['wR', 'wk', 'wB', 'wQ', 'wK', 'wB', 'wk', 'wR']]
         self.canvas = Canvas(self.wnd, height=self.height, width=self.width)
+        self.canvas.bind('<Button-1>',self.mousepress)
         self.canvas.pack()
+        self.selected = ()
+        self.clicks = []
+        self.extra = ()
+        self.tags = {}
+        self.textTags = {}
+
+    # drawing the board on the interface
     def draw(self):
+        self.canvas.delete()
         for i in range(8):
             for j in range(8):
                 if (i%2 != 1 and j%2 == 1) or ((i%2 == 1 or i%2 == 2) and j%2 != 1):
-                    self.canvas.create_rectangle(i*self.unit, j*self.unit,i*self.unit+self.unit,j*self.unit+self.unit,fill='dark red')
+                    self.tags[(i,j)] = (self.canvas.create_rectangle(i*self.unit, j*self.unit,i*self.unit+self.unit,j*self.unit+self.unit,fill='dark red'),'dark red')
                 else:
-                    self.canvas.create_rectangle(i*self.unit, j*self.unit,i*self.unit+self.unit,j*self.unit+self.unit,fill= lightColor)
-                self.canvas.create_text(i*self.unit+self.unit//2,j*self.unit+self.unit//2,text=self.pieces[self.b[j][i]],font=('DejaVu Sans',self.unit//2))
+                    self.tags[(i,j)] = (self.canvas.create_rectangle(i*self.unit, j*self.unit,i*self.unit+self.unit,j*self.unit+self.unit,fill= lightColor),lightColor)
+                self.textTags[(i,j)] = self.canvas.create_text(i * self.unit + self.unit // 2, j * self.unit + self.unit // 2,text=self.pieces[self.board[j][i]],font=('DejaVu Sans', self.unit // 2))
+
+    # updates the interface every time a move is made
+    def updatePieces(self,start,end):
+        self.canvas.delete(self.textTags[(start[0],start[1])])
+        self.canvas.delete(self.textTags[(end[0],end[1])])
+        self.textTags[(start[0],start[1])] = self.canvas.create_text(start[0] * self.unit + self.unit // 2, start[1] * self.unit + self.unit // 2,text=self.pieces[self.board[start[1]][start[0]]],font=('DejaVu Sans', self.unit // 2))
+        self.textTags[(end[0],end[1])] = self.canvas.create_text(end[0] * self.unit + self.unit // 2, end[1] * self.unit + self.unit // 2,text=self.pieces[self.board[end[1]][end[0]]], font=('DejaVu Sans', self.unit // 2))
+
+    def changeInfo(self,coord):
+        self.x1 = coord[0][0]
+        self.y1 = coord[0][1]
+        self.x2 = coord[1][0]
+        self.y2 = coord[1][1]
+        self.color = self.board[self.y1][self.x1][0]
+        self.piece = self.board[self.y1][self.x1]
+
+
+    # function that runs the full game based on the event given to it
+    def mousepress(self,event):
+        # calculate which square the user clicks on
+        x = event.x//self.unit
+        y = event.y//self.unit
+
+        # dehighlight the highlighted squares
+        if len(self.clicks) == 1:
+            self.x2 = x
+            self.y2 = y
+            if self.checkmoves() == False:
+                for i in self.possibleMoves():
+                    self.canvas.itemconfig(self.tags[(int(i[0]),int(i[1]))][0], fill=self.tags[(int(i[0]),int(i[1]))][1])
+
+        # user can deselect the piece if he clicks twice
+        if self.selected == (x,y):
+            self.selected = ()
+            self.clicks = []
+            # making the square turn back to original color if it was deselected
+            self.canvas.itemconfig(self.tags[(x,y)][0],fill = self.tags[(x,y)][1])
+
+
+        else:
+            # making sure that the user doesnt choose to move an opponents piece
+            if (self.board[y][x][0] == self.player and len(self.clicks) == 0) or len(self.clicks) == 1:
+                self.selected = (x, y)
+                self.clicks.append(self.selected)
+                print('self.clicks: ',self.clicks)
+
+
+        if self.clicks != []:
+                # highlight square to show where player clicked
+                # if player clicks an empty square or one not containing his pieces, dont highlight
+                if self.board[self.selected[1]][self.selected[0]][0] == self.player:
+                    self.canvas.itemconfig(self.tags[self.clicks[0]][0],fill = 'yellow')
+
+        # if user clicks 2 pieces that belong to him twice, only choose and highlight the last one
+        if len(self.clicks) == 2:
+            if self.board[y][x][0] == self.board[self.clicks[0][1]][self.clicks[0][0]][0] == self.player:
+                self.canvas.itemconfig(self.tags[self.clicks[0]][0], fill= self.tags[self.clicks[0]][1])
+                self.canvas.itemconfig(self.tags[self.clicks[1]][0], fill= 'yellow')
+                self.clicks = [self.selected]
+
+        # highlighting possible moves with the selected piece
+        if len(self.clicks) == 1 and self.board[y][x] != '__':
+            self.x1 = x
+            self.y1 = y
+            self.piece = self.board[self.y1][self.x1]
+            self.color = self.board[self.y1][self.x1][0]
+            for i in self.possibleMoves():
+                self.canvas.itemconfig(self.tags[(int(i[0]), int(i[1]))][0], fill='light blue')
+            return
+
+        # changing board and moving the pieces if conditions met
+        if len(self.clicks) == 2:
+            self.changeInfo(self.clicks)
+            if self.player == self.color and self.checkmoves() != False:
+                # dehighlight the previously highlighted squares
+                for i in self.possibleMoves():
+                    self.canvas.itemconfig(self.tags[(int(i[0]),int(i[1]))][0], fill=self.tags[(int(i[0]),int(i[1]))][1])
+                self.canvas.itemconfig(self.tags[(self.clicks[0][0],self.clicks[0][1])][0], fill = self.tags[(self.clicks[0][0],self.clicks[0][1])][1])
+                self.movePiece()
+                self.updatePieces(self.clicks[0],self.clicks[1])
+                self.printB()
+                # announce winner when game ends
+                if self.done() == True:
+                    if self.player == 'b':
+                        messagebox.showinfo('Result', 'Black wins!!')
+                    else:
+                        messagebox.showinfo('Resutl','White wins!!')
+                self.changePlayer()
+            else:
+                self.canvas.itemconfig(self.tags[self.clicks[0]][0], fill= self.tags[self.clicks[0]][1])
+                self.canvas.itemconfig(self.tags[self.clicks[0]][1], fill= self.tags[self.clicks[0]][1])
+            self.clicks = []
+
+
     def runTk(self):
         self.draw()
         self.wnd.mainloop()
+
 a = ChessInterface()
 a.runTk()
 
-
+### to do:
+### done 1- debug the mouse press function and make the interface more usable
+### done 2- highlight the intended piece
+### done 3- highlight the possible moves
+### done 4- including the condition where king is dead
+### 5- option of going back to the menu
+### done 5- pop up that tells which player won
+### 6- clean and nice main menu
+### 7- try the rigidity of the program
+### done 8- make the interface smoother and faster by only changing the text and not drawing every time again
+### done this will require to divide draw into 2 functions and maybe using the configure for changing text
+### 9- work on at least a decent AI
+### 10- make main menu, when a game is done, return back to the main menu after showing the messagebox
 

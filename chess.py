@@ -2,6 +2,8 @@
 ### Andrew ID: aelfekih
 ### Final Project
 ### Chess
+import random
+import time
 from tkinter import *
 from tkinter import messagebox
 
@@ -33,6 +35,8 @@ class Chess:
         self.color = self.board[self.y1][self.x1][0]
         self.piece = self.board[self.y1][self.x1]
         self.eaten = []
+        # moves will be recorded as tuples
+        self.moves = []
         self.player = 'w'
 
     # gets input from the user and changes the properties according to input
@@ -66,9 +70,9 @@ class Chess:
         # moves will be an int
         # first digit is x pos, second digit is y pos
         moves = []
-        if self.color == 'b':
+        if self.player == 'b':
             plr = -1
-        if self.color == 'w':
+        if self.player == 'w':
             plr = 1
 
         # initial position
@@ -90,10 +94,10 @@ class Chess:
         # pawn can eat diagonally
         # check for border cases
         # can only move diagonally if there is a piece of opposing color there
-        if self.x1 != 0 and self.board[self.y1-plr][self.x1-1][0] != self.color and self.board[self.y1-plr][self.x1-1][0] != '_':
+        if self.x1 != 0 and self.y1 != 7 and self.board[self.y1-plr][self.x1-1][0] != self.color and self.board[self.y1-plr][self.x1-1][0] != '_':
             moves.append(str(self.x1-1) + str(self.y1-plr))
 
-        if self.x1 != 7 and self.board[self.y1-plr][self.x1+1][0] != self.color and self.board[self.y1-plr][self.x1+1][0] != '_':
+        if self.x1 != 7 and self.y1 != 7 and self.board[self.y1-plr][self.x1+1][0] != self.color and self.board[self.y1-plr][self.x1+1][0] != '_':
             moves.append(str(self.x1+1) + str(self.y1-plr))
 
         return moves
@@ -258,8 +262,25 @@ class Chess:
                 # if so add it to the eaten list
                 if self.board[self.y2][self.x2] != '__':
                     self.eaten.append(self.board[self.y2][self.x2])
+                    self.moves.append([(self.x1,self.y1),(self.x2,self.y2),()])
+                else:
+                    self.moves.append([(self.x1, self.y1), (self.x2, self.y2)])
                 # move piece
                 self.board[self.y2][self.x2] = self.piece
+                print(self.moves)
+
+    def undoMove(self):
+        print('this is self.moves: ',self.moves[len(self.moves)-1])
+        lastMove = self.moves[len(self.moves)-1]
+        if len(lastMove) == 2:
+            self.board[lastMove[0][1]][lastMove[0][0]] = self.board[lastMove[1][1]][lastMove[1][0]]
+            self.board[lastMove[1][1]][lastMove[1][0]] = '__'
+            self.moves.pop()
+        elif len(lastMove) == 3:
+            self.board[lastMove[0][1]][lastMove[0][0]] = self.board[lastMove[1][1]][lastMove[1][0]]
+            self.board[lastMove[1][1]][lastMove[1][0]] = self.eaten[len(self.eaten)-1]
+            self.moves.pop()
+            self.eaten.pop()
 
     # helper used in checkmoves
     def check(self,moves):
@@ -312,6 +333,8 @@ class Chess:
 
 
     def possibleMoves(self):
+
+
         # pawn
         if self.piece[1] == 'P':
             return self.pawn()
@@ -415,6 +438,7 @@ class Chess:
 
 
 
+
 #chess = Chess()
 #chess.run()
 
@@ -431,7 +455,8 @@ class ChessInterface(Chess):
         self.height = self.unit*8
         self.width = self.unit*8
         self.wnd = Tk()
-        self.wnd.geometry('490x490')
+        # original: '40x490'
+        self.wnd.geometry('490x510')
         self.pieces = {'bP': '\u265F',
                        'bK': '\u265A',
                        'bQ': '\u265B',
@@ -448,7 +473,9 @@ class ChessInterface(Chess):
                        }
         self.canvas = Canvas(self.wnd, height=self.height, width=self.width)
         self.canvas.bind('<Button-1>',self.mousepress)
+        self.button = Button(self.wnd,text='redo',command = self.redo)
         self.canvas.pack()
+        self.button.pack()
         self.selected = ()
         self.clicks = []
         self.extra = ()
@@ -481,48 +508,91 @@ class ChessInterface(Chess):
         self.color = self.board[self.y1][self.x1][0]
         self.piece = self.board[self.y1][self.x1]
 
+    def redo(self):
+        self.undoMove()
+        self.draw()
+        print('ohoy')
 
-    # function that runs the full game based on the event given to it
-    def mousepress(self,event):
-        # calculate which square the user clicks on
-        x = event.x//self.unit
-        y = event.y//self.unit
+    # dumb AI that just makes a random valid move
+    def dumbAI(self):
+        i = random.randint(0, 7)
+        j = random.randint(0, 7)
+        self.x1 = i
+        self.y1 = j
+        self.color = self.board[self.y1][self.x1][0]
+        self.piece = self.board[self.y1][self.x1]
+        while self.color != self.player or self.possibleMoves() == []:
+            # if self.color == '_':
+            #     continue
 
+            i = random.randint(0, 7)
+            j = random.randint(0, 7)
+            self.x1 = i
+            self.y1 = j
+            self.piece = self.board[self.y1][self.x1]
+            self.color = self.board[self.y1][self.x1][0]
+
+        move = random.choice(self.possibleMoves())
+        self.x2 = int(move[0])
+        self.y2 = int(move[1])
+        self.movePiece()
+        self.updatePieces((self.x1, self.y1), (self.x2, self.y2))
+        if self.done() == True:
+            if self.player == 'b':
+                messagebox.showinfo('Result', 'Black wins!!')
+            else:
+                messagebox.showinfo('Resutl', 'White wins!!')
+        self.changePlayer()
+
+    # this is a helper that will be used in the mousepressed function
+    # dehilights previously selected squares
+    # deselect a piece by clicking twice
+    # restricting user to only his pieces
+    def partOfMain(self, x, y):
         # dehighlight the highlighted squares
         if len(self.clicks) == 1:
             self.x2 = x
             self.y2 = y
-            if self.checkmoves() == False:
+            if not self.checkmoves():
                 for i in self.possibleMoves():
-                    self.canvas.itemconfig(self.tags[(int(i[0]),int(i[1]))][0], fill=self.tags[(int(i[0]),int(i[1]))][1])
+                    self.canvas.itemconfig(self.tags[(int(i[0]), int(i[1]))][0],
+                                           fill=self.tags[(int(i[0]), int(i[1]))][1])
 
         # user can deselect the piece if he clicks twice
-        if self.selected == (x,y):
+        if self.selected == (x, y):
             self.selected = ()
             self.clicks = []
             # making the square turn back to original color if it was deselected
-            self.canvas.itemconfig(self.tags[(x,y)][0],fill = self.tags[(x,y)][1])
+            self.canvas.itemconfig(self.tags[(x, y)][0], fill=self.tags[(x, y)][1])
 
+        if self.selected == (x, y):
+            self.selected = ()
+            self.clicks = []
+            # making the square turn back to original color if it was deselected
+            self.canvas.itemconfig(self.tags[(x, y)][0], fill=self.tags[(x, y)][1])
 
         else:
             # making sure that the user doesnt choose to move an opponents piece
             if (self.board[y][x][0] == self.player and len(self.clicks) == 0) or len(self.clicks) == 1:
                 self.selected = (x, y)
                 self.clicks.append(self.selected)
-                print('self.clicks: ',self.clicks)
+                print('self.clicks: ', self.clicks)
 
-
+    # this is a part of mousepress function
+    # takes care of most of the highlight rules and restrictions
+    # modifies self.click and self.selected
+    def highlightAndModify(self, x, y):
         if self.clicks != []:
-                # highlight square to show where player clicked
-                # if player clicks an empty square or one not containing his pieces, dont highlight
-                if self.board[self.selected[1]][self.selected[0]][0] == self.player:
-                    self.canvas.itemconfig(self.tags[self.clicks[0]][0],fill = 'yellow')
+            # highlight square to show where player clicked
+            # if player clicks an empty square or one not containing his pieces, dont highlight
+            if self.board[self.selected[1]][self.selected[0]][0] == self.player:
+                self.canvas.itemconfig(self.tags[self.clicks[0]][0], fill='yellow')
 
         # if user clicks 2 pieces that belong to him twice, only choose and highlight the last one
         if len(self.clicks) == 2:
             if self.board[y][x][0] == self.board[self.clicks[0][1]][self.clicks[0][0]][0] == self.player:
-                self.canvas.itemconfig(self.tags[self.clicks[0]][0], fill= self.tags[self.clicks[0]][1])
-                self.canvas.itemconfig(self.tags[self.clicks[1]][0], fill= 'yellow')
+                self.canvas.itemconfig(self.tags[self.clicks[0]][0], fill=self.tags[self.clicks[0]][1])
+                self.canvas.itemconfig(self.tags[self.clicks[1]][0], fill='yellow')
                 self.clicks = [self.selected]
 
         # highlighting possible moves with the selected piece
@@ -535,6 +605,20 @@ class ChessInterface(Chess):
                 self.canvas.itemconfig(self.tags[(int(i[0]), int(i[1]))][0], fill='light blue')
             return
 
+    def strongAI(self):
+        pass
+
+
+    # function that runs the full game based on the event given to it
+    def mousepress(self,event):
+        # calculate which square the user clicks on
+        x = event.x//self.unit
+        y = event.y//self.unit
+
+        self.partOfMain(x,y)
+
+        self.highlightAndModify(x,y)
+
         # changing board and moving the pieces if conditions met
         if len(self.clicks) == 2:
             self.changeInfo(self.clicks)
@@ -542,7 +626,8 @@ class ChessInterface(Chess):
                 # dehighlight the previously highlighted squares
                 for i in self.possibleMoves():
                     self.canvas.itemconfig(self.tags[(int(i[0]),int(i[1]))][0], fill=self.tags[(int(i[0]),int(i[1]))][1])
-                self.canvas.itemconfig(self.tags[(self.clicks[0][0],self.clicks[0][1])][0], fill = self.tags[(self.clicks[0][0],self.clicks[0][1])][1])
+                self.canvas.itemconfig(self.tags[(self.clicks[0][0],self.clicks[0][1])][0]
+                                       , fill = self.tags[(self.clicks[0][0],self.clicks[0][1])][1])
                 self.movePiece()
                 self.updatePieces(self.clicks[0],self.clicks[1])
                 self.printB()
@@ -553,15 +638,22 @@ class ChessInterface(Chess):
                     else:
                         messagebox.showinfo('Resutl','White wins!!')
                 self.changePlayer()
+                # playing against the dumb AI
+                # to play against other non computer player, comment out this line
+                #self.dumbAI()
             else:
                 self.canvas.itemconfig(self.tags[self.clicks[0]][0], fill= self.tags[self.clicks[0]][1])
                 self.canvas.itemconfig(self.tags[self.clicks[0]][1], fill= self.tags[self.clicks[0]][1])
             self.clicks = []
-
+            self.selected = ()
 
     def runTk(self):
         self.draw()
         self.wnd.mainloop()
+
+
+    ## trying to make the stupid AI
+
 
 a = ChessInterface()
 a.runTk()
@@ -577,6 +669,11 @@ a.runTk()
 ### 7- try the rigidity of the program
 ### done 8- make the interface smoother and faster by only changing the text and not drawing every time again
 ### done this will require to divide draw into 2 functions and maybe using the configure for changing text
-### 9- work on at least a decent AI
+### done - dumb AI
 ### 10- make main menu, when a game is done, return back to the main menu after showing the messagebox
 
+
+### done : undoMove
+### done: tracing all moves
+### done: tracing all eaten pieces
+### small bug in dumb AI, if all pieces are eaten infinite while loop and program gets stuck

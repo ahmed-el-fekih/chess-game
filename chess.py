@@ -67,7 +67,7 @@ class Chess:
 
     def pawn(self):
         # gives back all of possible moves for a single piece
-        # moves will be an int
+        # moves will be strings
         # first digit is x pos, second digit is y pos
         moves = []
         if self.player == 'b':
@@ -334,7 +334,6 @@ class Chess:
 
     def possibleMoves(self):
 
-
         # pawn
         if self.piece[1] == 'P':
             return self.pawn()
@@ -436,7 +435,22 @@ class Chess:
             self.getinput()
         print('Congratsss!! '+ self.player + ' wins!!')
 
-
+    def pieceValue(self,piece):
+        if piece == '_':
+            value = 0
+        if piece == 'P':
+            value = 10
+        if piece == 'R':
+            value = 30
+        if piece == 'k':
+            value = 25
+        if piece == 'Q':
+            value = 95
+        if piece == 'B':
+            value = 28
+        if piece == 'K':
+            value = 900
+        return value
 
 
 #chess = Chess()
@@ -488,10 +502,21 @@ class ChessInterface(Chess):
         for i in range(8):
             for j in range(8):
                 if (i%2 != 1 and j%2 == 1) or ((i%2 == 1 or i%2 == 2) and j%2 != 1):
-                    self.tags[(i,j)] = (self.canvas.create_rectangle(i*self.unit, j*self.unit,i*self.unit+self.unit,j*self.unit+self.unit,fill='dark red'),'dark red')
+                    self.tags[(i,j)] = (self.canvas.create_rectangle(i*self.unit,
+                                                                     j*self.unit,
+                                                                     i*self.unit+self.unit,
+                                                                     j*self.unit+self.unit,
+                                                                     fill='dark red'),'dark red')
                 else:
-                    self.tags[(i,j)] = (self.canvas.create_rectangle(i*self.unit, j*self.unit,i*self.unit+self.unit,j*self.unit+self.unit,fill= lightColor),lightColor)
-                self.textTags[(i,j)] = self.canvas.create_text(i * self.unit + self.unit // 2, j * self.unit + self.unit // 2,text=self.pieces[self.board[j][i]],font=('DejaVu Sans', self.unit // 2))
+                    self.tags[(i,j)] = (self.canvas.create_rectangle(i*self.unit,
+                                                                     j*self.unit,
+                                                                     i*self.unit+self.unit,
+                                                                     j*self.unit+self.unit,
+                                                                     fill= lightColor),lightColor)
+                self.textTags[(i,j)] = self.canvas.create_text(i * self.unit + self.unit // 2,
+                                                               j * self.unit + self.unit // 2,
+                                                               text=self.pieces[self.board[j][i]],
+                                                               font=('DejaVu Sans', self.unit // 2))
 
     # updates the interface every time a move is made
     def updatePieces(self,start,end):
@@ -549,6 +574,45 @@ class ChessInterface(Chess):
             else:
                 messagebox.showinfo('Resutl', 'White wins!!')
         self.changePlayer()
+
+    # this AI only either makes a random move or eats the strongest possible piece if possible
+    def mediumAI(self):
+        maxValue = 0
+        bestPiece = ()
+        for i in range(8):
+            for j in range(8):
+                if self.board[i][j][0] == self.player and self.board[i][j][0] != '_':
+
+                    self.x1 = j
+                    self.y1 = i
+                    self.piece = self.board[i][j]
+                    self.color = self.board[i][j][0]
+                    if self.possibleMoves() != []:
+                        for move in self.possibleMoves():
+                            if self.pieceValue(self.board[int(move[1])][int(move[0])][1]) > maxValue:
+                                bestPiece = (self.x1,self.y1)
+                                self.x2 = int(move[0])
+                                self.y2 = int(move[1])
+                                maxValue = self.pieceValue(self.board[int(move[1])][int(move[0])][1])
+        print('max value: ',maxValue)
+
+        if maxValue == 0:
+            print('max value should be 0')
+            self.dumbAI()
+        else:
+            self.x1 = bestPiece[0]
+            self.y1 = bestPiece[1]
+            self.piece = self.board[self.y1][self.x1]
+            self.color = self.board[self.y1][self.x1][0]
+            print('test move: ', (self.x1, self.y1), (self.x2, self.y2))
+            self.movePiece()
+            self.updatePieces((self.x1,self.y1),(self.x2,self.y2))
+            if self.done() == True:
+                if self.player == 'b':
+                    messagebox.showinfo('Result', 'Black wins!!')
+                else:
+                    messagebox.showinfo('Resutl', 'White wins!!')
+            self.changePlayer()
 
     # this is a helper that will be used in the mousepressed function
     # dehilights previously selected squares
@@ -647,6 +711,8 @@ class ChessInterface(Chess):
                 # playing against the dumb AI
                 # to play against other non computer player, comment out this line
                 #self.dumbAI()
+                self.mediumAI()
+                self.printB()
             else:
                 self.canvas.itemconfig(self.tags[self.clicks[0]][0], fill= self.tags[self.clicks[0]][1])
                 self.canvas.itemconfig(self.tags[self.clicks[0]][1], fill= self.tags[self.clicks[0]][1])

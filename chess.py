@@ -497,8 +497,14 @@ class ChessInterface(Chess):
     def updatePieces(self,start,end):
         self.canvas.delete(self.textTags[(start[0],start[1])])
         self.canvas.delete(self.textTags[(end[0],end[1])])
-        self.textTags[(start[0],start[1])] = self.canvas.create_text(start[0] * self.unit + self.unit // 2, start[1] * self.unit + self.unit // 2,text=self.pieces[self.board[start[1]][start[0]]],font=('DejaVu Sans', self.unit // 2))
-        self.textTags[(end[0],end[1])] = self.canvas.create_text(end[0] * self.unit + self.unit // 2, end[1] * self.unit + self.unit // 2,text=self.pieces[self.board[end[1]][end[0]]], font=('DejaVu Sans', self.unit // 2))
+        self.textTags[(start[0],start[1])] = self.canvas.create_text(start[0] * self.unit + self.unit // 2,
+                                                                     start[1] * self.unit + self.unit // 2,
+                                                                     text=self.pieces[self.board[start[1]][start[0]]],
+                                                                     font=('DejaVu Sans', self.unit // 2))
+        self.textTags[(end[0],end[1])] = self.canvas.create_text(end[0] * self.unit + self.unit // 2,
+                                                                 end[1] * self.unit + self.unit // 2,
+                                                                 text=self.pieces[self.board[end[1]][end[0]]],
+                                                                 font=('DejaVu Sans', self.unit // 2))
 
     def changeInfo(self,coord):
         self.x1 = coord[0][0]

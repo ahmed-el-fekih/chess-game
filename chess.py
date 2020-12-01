@@ -3,9 +3,6 @@
 ### Final Project
 ### Chess
 import random
-import time
-from tkinter import *
-from tkinter import messagebox
 
 
 
@@ -38,6 +35,8 @@ class Chess:
         # moves will be recorded as tuples
         self.moves = []
         self.player = 'w'
+        self.whiteScore = 1290
+        self.blackScore = 1290
 
     # gets input from the user and changes the properties according to input
     def getinput(self):
@@ -262,25 +261,38 @@ class Chess:
                 # if so add it to the eaten list
                 if self.board[self.y2][self.x2] != '__':
                     self.eaten.append(self.board[self.y2][self.x2])
+                    if self.player == 'w':
+                        self.blackScore -= self.pieceValue(self.eaten[len(self.eaten) - 1][1])
+                    else:
+                        self.whiteScore -= self.pieceValue(self.eaten[len(self.eaten) - 1][1])
                     self.moves.append([(self.x1,self.y1),(self.x2,self.y2),()])
                 else:
                     self.moves.append([(self.x1, self.y1), (self.x2, self.y2)])
                 # move piece
                 self.board[self.y2][self.x2] = self.piece
-                print(self.moves)
+            else:
+                print('there is a mistake')
 
+    # undoes the previous move made by a specific player
     def undoMove(self):
-        print('this is self.moves: ',self.moves[len(self.moves)-1])
         lastMove = self.moves[len(self.moves)-1]
+        # if no piece was eaten
         if len(lastMove) == 2:
             self.board[lastMove[0][1]][lastMove[0][0]] = self.board[lastMove[1][1]][lastMove[1][0]]
             self.board[lastMove[1][1]][lastMove[1][0]] = '__'
             self.moves.pop()
+        # if a piece was eaten
         elif len(lastMove) == 3:
             self.board[lastMove[0][1]][lastMove[0][0]] = self.board[lastMove[1][1]][lastMove[1][0]]
             self.board[lastMove[1][1]][lastMove[1][0]] = self.eaten[len(self.eaten)-1]
             self.moves.pop()
-            self.eaten.pop()
+            eatenPiece = self.eaten.pop()[1]
+            # restoring the score to previous states
+            if self.player == 'b':
+                self.blackScore += self.pieceValue(eatenPiece)
+            else:
+                self.whiteScore += self.pieceValue(eatenPiece)
+        self.changePlayer()
 
     # helper used in checkmoves
     def check(self,moves):
@@ -331,7 +343,7 @@ class Chess:
             return True
         return False
 
-
+    # all possibleMoves for a given piece of a player
     def possibleMoves(self):
 
         # pawn
@@ -357,6 +369,22 @@ class Chess:
         # queen
         if self.piece[1] == 'Q':
             return self.queen()
+
+    # allPossibleMoves for a given player
+    def allPossibleMoves(self):
+        moves = []
+        for i in range(8):
+            for j in range(8):
+                if self.board[i][j][0] == self.player and self.board[i][j][0] != '_':
+                    self.x1 = j
+                    self.y1 = i
+                    self.piece = self.board[self.y1][self.x1]
+                    self.color = self.board[self.y1][self.x1][0]
+                    if self.possibleMoves() != []:
+                        for move in self.possibleMoves():
+                            moves.append([(self.x1,self.y1),(int(move[0]),int(move[1]))])
+        return moves
+
 
     # moves the piece
     def movePiece(self):
@@ -391,12 +419,6 @@ class Chess:
             Q = self.queen()
             self.move('Q',Q)
 
-    # should check if the move is valid
-    # not working for some reason
-    def isValid(self):
-        if self.player == self.color and self.checkmoves() != False:
-            return True
-        return True
 
     # True means the game is done
     # False means the game is still ongoing
@@ -419,6 +441,7 @@ class Chess:
 
     # alternates between white and black while checking for valid moves
     # stops when either king is dead
+    # to play without a gui use this
     def run(self):
         self.printB()
         self.getinput()
@@ -435,317 +458,134 @@ class Chess:
             self.getinput()
         print('Congratsss!! '+ self.player + ' wins!!')
 
+    # value of each piece, to be used in the medium and strong AI
     def pieceValue(self,piece):
         if piece == '_':
             value = 0
         if piece == 'P':
             value = 10
         if piece == 'R':
-            value = 30
+            value = 50
         if piece == 'k':
-            value = 25
+            value = 30
         if piece == 'Q':
-            value = 95
+            value = 90
         if piece == 'B':
-            value = 28
+            value = 30
         if piece == 'K':
             value = 900
         return value
 
-
-#chess = Chess()
-#chess.run()
-
-########################################################################################
-## GUI
-## User interface test
-
-darkColor = '#58ae8b'
-lightColor = '#feffed'
-class ChessInterface(Chess):
-    def __init__(self,size=60):
-        Chess.__init__(self)
-        self.unit = size
-        self.height = self.unit*8
-        self.width = self.unit*8
-        self.wnd = Tk()
-        # original: '40x490'
-        self.wnd.geometry('490x510')
-        self.pieces = {'bP': '\u265F',
-                       'bK': '\u265A',
-                       'bQ': '\u265B',
-                       'bk': '\u265E',
-                       'bB': '\u265D',
-                       'bR': '\u265C',
-                       'wP': '\u2659',
-                       'wK': '\u2654',
-                       'wQ': '\u2655',
-                       'wk': '\u2658',
-                       'wB': '\u2657',
-                       'wR': '\u2656',
-                       '__': ''
-                       }
-        self.canvas = Canvas(self.wnd, height=self.height, width=self.width)
-        self.canvas.bind('<Button-1>',self.mousepress)
-        self.button = Button(self.wnd,text='redo',command = self.redo)
-        self.canvas.pack()
-        self.button.pack()
-        self.selected = ()
-        self.clicks = []
-        self.extra = ()
-        self.tags = {}
-        self.textTags = {}
-
-    # drawing the board on the interface
-    def draw(self):
-        self.canvas.delete()
-        for i in range(8):
-            for j in range(8):
-                if (i%2 != 1 and j%2 == 1) or ((i%2 == 1 or i%2 == 2) and j%2 != 1):
-                    self.tags[(i,j)] = (self.canvas.create_rectangle(i*self.unit,
-                                                                     j*self.unit,
-                                                                     i*self.unit+self.unit,
-                                                                     j*self.unit+self.unit,
-                                                                     fill='dark red'),'dark red')
-                else:
-                    self.tags[(i,j)] = (self.canvas.create_rectangle(i*self.unit,
-                                                                     j*self.unit,
-                                                                     i*self.unit+self.unit,
-                                                                     j*self.unit+self.unit,
-                                                                     fill= lightColor),lightColor)
-                self.textTags[(i,j)] = self.canvas.create_text(i * self.unit + self.unit // 2,
-                                                               j * self.unit + self.unit // 2,
-                                                               text=self.pieces[self.board[j][i]],
-                                                               font=('DejaVu Sans', self.unit // 2))
-
-    # updates the interface every time a move is made
-    def updatePieces(self,start,end):
-        self.canvas.delete(self.textTags[(start[0],start[1])])
-        self.canvas.delete(self.textTags[(end[0],end[1])])
-        self.textTags[(start[0],start[1])] = self.canvas.create_text(start[0] * self.unit + self.unit // 2,
-                                                                     start[1] * self.unit + self.unit // 2,
-                                                                     text=self.pieces[self.board[start[1]][start[0]]],
-                                                                     font=('DejaVu Sans', self.unit // 2))
-        self.textTags[(end[0],end[1])] = self.canvas.create_text(end[0] * self.unit + self.unit // 2,
-                                                                 end[1] * self.unit + self.unit // 2,
-                                                                 text=self.pieces[self.board[end[1]][end[0]]],
-                                                                 font=('DejaVu Sans', self.unit // 2))
-
-    def changeInfo(self,coord):
-        self.x1 = coord[0][0]
-        self.y1 = coord[0][1]
-        self.x2 = coord[1][0]
-        self.y2 = coord[1][1]
-        self.color = self.board[self.y1][self.x1][0]
-        self.piece = self.board[self.y1][self.x1]
-
-    def redo(self):
-        self.undoMove()
-        self.draw()
-        print('ohoy')
-
-    # dumb AI that just makes a random valid move
-    def dumbAI(self):
-        i = random.randint(0, 7)
-        j = random.randint(0, 7)
-        self.x1 = i
-        self.y1 = j
-        self.color = self.board[self.y1][self.x1][0]
-        self.piece = self.board[self.y1][self.x1]
-        while self.color != self.player or self.possibleMoves() == []:
-            # if self.color == '_':
-            #     continue
-
-            i = random.randint(0, 7)
-            j = random.randint(0, 7)
-            self.x1 = i
-            self.y1 = j
-            self.piece = self.board[self.y1][self.x1]
-            self.color = self.board[self.y1][self.x1][0]
-
-        move = random.choice(self.possibleMoves())
-        self.x2 = int(move[0])
-        self.y2 = int(move[1])
-        self.movePiece()
-        self.updatePieces((self.x1, self.y1), (self.x2, self.y2))
-        if self.done() == True:
-            if self.player == 'b':
-                messagebox.showinfo('Result', 'Black wins!!')
-            else:
-                messagebox.showinfo('Resutl', 'White wins!!')
-        self.changePlayer()
-
-    # this AI only either makes a random move or eats the strongest possible piece if possible
-    def mediumAI(self):
-        maxValue = 0
-        bestPiece = ()
-        for i in range(8):
-            for j in range(8):
-                if self.board[i][j][0] == self.player and self.board[i][j][0] != '_':
-
-                    self.x1 = j
-                    self.y1 = i
-                    self.piece = self.board[i][j]
-                    self.color = self.board[i][j][0]
-                    if self.possibleMoves() != []:
-                        for move in self.possibleMoves():
-                            if self.pieceValue(self.board[int(move[1])][int(move[0])][1]) > maxValue:
-                                bestPiece = (self.x1,self.y1)
-                                self.x2 = int(move[0])
-                                self.y2 = int(move[1])
-                                maxValue = self.pieceValue(self.board[int(move[1])][int(move[0])][1])
-        print('max value: ',maxValue)
-
-        if maxValue == 0:
-            print('max value should be 0')
-            self.dumbAI()
+    # to be used in the minimax
+    def evaluation(self,colorToMaximize):
+        if colorToMaximize == 'w':
+            return self.whiteScore - self.blackScore
         else:
-            self.x1 = bestPiece[0]
-            self.y1 = bestPiece[1]
-            self.piece = self.board[self.y1][self.x1]
-            self.color = self.board[self.y1][self.x1][0]
-            print('test move: ', (self.x1, self.y1), (self.x2, self.y2))
-            self.movePiece()
-            self.updatePieces((self.x1,self.y1),(self.x2,self.y2))
-            if self.done() == True:
-                if self.player == 'b':
-                    messagebox.showinfo('Result', 'Black wins!!')
-                else:
-                    messagebox.showinfo('Resutl', 'White wins!!')
-            self.changePlayer()
+            return self.blackScore - self.whiteScore
 
-    # this is a helper that will be used in the mousepressed function
-    # dehilights previously selected squares
-    # deselect a piece by clicking twice
-    # restricting user to only his pieces
-    def partOfMain(self, x, y):
-        # dehighlight the highlighted squares
-        if len(self.clicks) == 1:
-            self.x2 = x
-            self.y2 = y
-            if not self.checkmoves():
-                for i in self.possibleMoves():
-                    self.canvas.itemconfig(self.tags[(int(i[0]), int(i[1]))][0],
-                                           fill=self.tags[(int(i[0]), int(i[1]))][1])
+    # minimax algorithm to be used in the smart AI
+    def minimax(self,depth,playerToMaximize,colorToMaximize):
+        if depth == 0 or self.done() == True:
+            return (None,self.evaluation(colorToMaximize))
 
-        # user can deselect the piece if he clicks twice
-        if self.selected == (x, y):
-            self.selected = ()
-            self.clicks = []
-            # making the square turn back to original color if it was deselected
-            self.canvas.itemconfig(self.tags[(x, y)][0], fill=self.tags[(x, y)][1])
-
-        if self.selected == (x, y):
-            self.selected = ()
-            self.clicks = []
-            # making the square turn back to original color if it was deselected
-            self.canvas.itemconfig(self.tags[(x, y)][0], fill=self.tags[(x, y)][1])
-
-        else:
-            # making sure that the user doesnt choose to move an opponents piece
-            if (self.board[y][x][0] == self.player and len(self.clicks) == 0) or len(self.clicks) == 1:
-                self.selected = (x, y)
-                self.clicks.append(self.selected)
-                print('self.clicks: ', self.clicks)
-
-    # this is a part of mousepress function
-    # takes care of most of the highlight rules and restrictions
-    # modifies self.click and self.selected
-    def highlightAndModify(self, x, y):
-        if self.clicks != []:
-            # highlight square to show where player clicked
-            # if player clicks an empty square or one not containing his pieces, dont highlight
-            if self.board[self.selected[1]][self.selected[0]][0] == self.player:
-                self.canvas.itemconfig(self.tags[self.clicks[0]][0], fill='yellow')
-
-        # if user clicks 2 pieces that belong to him twice, only choose and highlight the last one
-        if len(self.clicks) == 2:
-            if self.board[y][x][0] == self.board[self.clicks[0][1]][self.clicks[0][0]][0] == self.player:
-                self.canvas.itemconfig(self.tags[self.clicks[0]][0], fill=self.tags[self.clicks[0]][1])
-                self.canvas.itemconfig(self.tags[self.clicks[1]][0], fill='yellow')
-                self.clicks = [self.selected]
-
-        # highlighting possible moves with the selected piece
-        if len(self.clicks) == 1 and self.board[y][x] != '__':
-            self.x1 = x
-            self.y1 = y
-            self.piece = self.board[self.y1][self.x1]
-            self.color = self.board[self.y1][self.x1][0]
-            for i in self.possibleMoves():
-                self.canvas.itemconfig(self.tags[(int(i[0]), int(i[1]))][0], fill='light blue')
-            return
-
-    def strongAI(self):
-        pass
+        moves = self.allPossibleMoves()
+        i = random.randint(0,len(moves)-1)
+        bestMove = moves[i]
+        self.x1 = bestMove[0][0]
+        self.y1 = bestMove[0][1]
+        self.x2 = bestMove[1][0]
+        self.y2 = bestMove[1][1]
+        self.piece = self.board[self.y1][self.x1]
+        self.color = self.board[self.y1][self.x1][0]
 
 
-    # function that runs the full game based on the event given to it
-    def mousepress(self,event):
-        # calculate which square the user clicks on
-        x = event.x//self.unit
-        y = event.y//self.unit
-
-        self.partOfMain(x,y)
-
-        self.highlightAndModify(x,y)
-
-        # changing board and moving the pieces if conditions met
-        if len(self.clicks) == 2:
-            self.changeInfo(self.clicks)
-            if self.player == self.color and self.checkmoves() != False:
-                # dehighlight the previously highlighted squares
-                for i in self.possibleMoves():
-                    self.canvas.itemconfig(self.tags[(int(i[0]),int(i[1]))][0], fill=self.tags[(int(i[0]),int(i[1]))][1])
-                self.canvas.itemconfig(self.tags[(self.clicks[0][0],self.clicks[0][1])][0]
-                                       , fill = self.tags[(self.clicks[0][0],self.clicks[0][1])][1])
+        if playerToMaximize == True:
+            max = -9999999999
+            for move in moves:
+                self.x1 = move[0][0]
+                self.y1 = move[0][1]
+                self.x2 = move[1][0]
+                self.y2 = move[1][1]
+                self.piece = self.board[self.y1][self.x1]
+                self.color = self.board[self.y1][self.x1][0]
                 self.movePiece()
-                self.updatePieces(self.clicks[0],self.clicks[1])
-                self.printB()
-                # announce winner when game ends
-                if self.done() == True:
-                    if self.player == 'b':
-                        messagebox.showinfo('Result', 'Black wins!!')
-                    else:
-                        messagebox.showinfo('Resutl','White wins!!')
                 self.changePlayer()
-                # playing against the dumb AI
-                # to play against other non computer player, comment out this line
-                #self.dumbAI()
-                self.mediumAI()
-                self.printB()
-            else:
-                self.canvas.itemconfig(self.tags[self.clicks[0]][0], fill= self.tags[self.clicks[0]][1])
-                self.canvas.itemconfig(self.tags[self.clicks[0]][1], fill= self.tags[self.clicks[0]][1])
-            self.clicks = []
-            self.selected = ()
+                value = self.minimax(depth-1,False,colorToMaximize)[1]
+                self.undoMove()
+                if value > max:
+                    max = value
+                    bestMove = move
+            return (bestMove,max)
 
-    def runTk(self):
-        self.draw()
-        self.wnd.mainloop()
-
-
-    ## trying to make the stupid AI
-
-
-a = ChessInterface()
-a.runTk()
-
-### to do:
-### done 1- debug the mouse press function and make the interface more usable
-### done 2- highlight the intended piece
-### done 3- highlight the possible moves
-### done 4- including the condition where king is dead
-### 5- option of going back to the menu
-### done 5- pop up that tells which player won
-### 6- clean and nice main menu
-### 7- try the rigidity of the program
-### done 8- make the interface smoother and faster by only changing the text and not drawing every time again
-### done this will require to divide draw into 2 functions and maybe using the configure for changing text
-### done - dumb AI
-### 10- make main menu, when a game is done, return back to the main menu after showing the messagebox
+        else:
+            min = 9999999999
+            for move in moves:
+                self.x1 = move[0][0]
+                self.y1 = move[0][1]
+                self.x2 = move[1][0]
+                self.y2 = move[1][1]
+                self.piece = self.board[self.y1][self.x1]
+                self.color = self.board[self.y1][self.x1][0]
+                self.movePiece()
+                self.changePlayer()
+                value = self.minimax(depth - 1, True, colorToMaximize)[1]
+                self.undoMove()
+                if value < min:
+                    min = value
+                    bestMove = move
+            return (bestMove, min)
 
 
-### done : undoMove
-### done: tracing all moves
-### done: tracing all eaten pieces
-### small bug in dumb AI, if all pieces are eaten infinite while loop and program gets stuck
+    # made for antichess (still not complete)
+    # does the opposite job of the original minimax
+    # chooses the poorest move
+    def oppositeminimax(self,depth,playerToMaximize,colorToMaximize):
+        if depth == 0 or self.done() == True:
+            return (None,self.evaluation(colorToMaximize))
+
+        moves = self.allPossibleMoves()
+        i = random.randint(0,len(moves)-1)
+        bestMove = moves[i]
+        self.x1 = bestMove[0][0]
+        self.y1 = bestMove[0][1]
+        self.x2 = bestMove[1][0]
+        self.y2 = bestMove[1][1]
+        self.piece = self.board[self.y1][self.x1]
+        self.color = self.board[self.y1][self.x1][0]
+
+
+        if playerToMaximize != True:
+            max = 0
+            for move in moves:
+                self.x1 = move[0][0]
+                self.y1 = move[0][1]
+                self.x2 = move[1][0]
+                self.y2 = move[1][1]
+                self.piece = self.board[self.y1][self.x1]
+                self.color = self.board[self.y1][self.x1][0]
+                self.movePiece()
+                self.changePlayer()
+                value = self.minimax(depth-1,False,colorToMaximize)[1]
+                self.undoMove()
+                if value > max:
+                    max = value
+                    bestMove = move
+            return (bestMove,max)
+
+        else:
+            min = 9999999999
+            for move in moves:
+                self.x1 = move[0][0]
+                self.y1 = move[0][1]
+                self.x2 = move[1][0]
+                self.y2 = move[1][1]
+                self.piece = self.board[self.y1][self.x1]
+                self.color = self.board[self.y1][self.x1][0]
+                self.movePiece()
+                self.changePlayer()
+                value = self.minimax(depth - 1, True, colorToMaximize)[1]
+                self.undoMove()
+                if value < min:
+                    min = value
+                    bestMove = move
+            return (bestMove, min)

@@ -116,7 +116,7 @@ class Chess:
         if self.y1 != 0 and self.x1 < 6 and self.board[self.y1 - 1][self.x1 + 2][0] != self.color:
             moves.append(str(self.x1 + 2) + str(self.y1 - 1))
 
-        if self.y1 != 0 and self.x1 > 2 and self.board[self.y1 - 1][self.x1 - 2][0] != self.color:
+        if self.y1 != 0 and self.x1 >= 2 and self.board[self.y1 - 1][self.x1 - 2][0] != self.color:
             moves.append(str(self.x1 - 2) + str(self.y1 - 1))
 
         # moving 2 squares up or down and 1 square to the right or left
@@ -299,8 +299,74 @@ class Chess:
         wantedMove = (str(self.x2) + str(self.y2))
         if wantedMove not in moves:
             return False
+    # helper used for all functions related to anti chess
+    def change(self,a,b,c,d,color,Piece):
+        self.x1 = a
+        self.y1 = b
+        self.x2 = c
+        self.y2 = d
+        self.color = color
+        self.piece = Piece
+    # checking if move is a valid anti chess move
+    def checkAntiMoves(self):
+        a = self.x1
+        b = self.y1
+        c = self.x2
+        d = self.y2
+        piece = self.board[self.y1][self.x1]
+        color = self.piece[0]
+        # pawn
+        if self.piece[1] == 'P':
+            P = self.pawn()
+            if self.check(P) == False or [(self.x1, self.y1), (self.x2, self.y2)] not in self.antiChessMoves():
+                return False
+            self.change(a,b,c,d,color,piece)
+            return True
 
-    # checks all the avaliable moves
+        # knight
+        if self.piece[1] == 'k':
+            k = self.knight()
+            if self.check(k) == False or [(self.x1, self.y1), (self.x2, self.y2)] not in self.antiChessMoves():
+                return False
+            self.change(a,b,c,d,color,piece)
+            return True
+        # king
+        if self.piece[1] == 'K':
+            K = self.king()
+            if self.check(K) == False or [(self.x1, self.y1), (self.x2, self.y2)] not in self.antiChessMoves():
+                return False
+            self.change(a,b,c,d,color,piece)
+
+            return True
+        # rook
+        if self.piece[1] == 'R':
+            R = self.rook()
+            if self.check(R) == False or [(self.x1, self.y1), (self.x2, self.y2)] not in self.antiChessMoves():
+                return False
+            self.change(a,b,c,d,color,piece)
+
+            return True
+
+        # bishop
+        if self.piece[1] == 'B':
+            B = self.bishop()
+            if self.check(B) == False or [(self.x1, self.y1), (self.x2, self.y2)] not in self.antiChessMoves():
+                return False
+            self.change(a,b,c,d,color,piece)
+
+            return True
+
+        # queen
+        if self.piece[1] == 'Q':
+            Q = self.queen()
+            if self.check(Q) == False or [(self.x1, self.y1), (self.x2, self.y2)] not in self.antiChessMoves():
+                return False
+            self.change(a,b,c,d,color,piece)
+
+            return True
+        return False
+
+    # checks all the avaliable moves for normal chess
     def checkmoves(self):
         # pawn
         if self.piece[1] == 'P':
@@ -384,40 +450,109 @@ class Chess:
                         for move in self.possibleMoves():
                             moves.append([(self.x1,self.y1),(int(move[0]),int(move[1]))])
         return moves
+    # all possible anti chess moves
+    def antiChessMoves(self):
+        moves = self.allPossibleMoves()
+        antiMoves = []
+        Piece = False
+        for move in moves:
+            if self.board[move[1][1]][move[1][0]] != '__':
+                antiMoves.append(move)
+                Piece = True
+        if Piece == False:
+            return moves
+        if Piece == True:
+            return antiMoves
 
-
-    # moves the piece
     def movePiece(self):
         # pawn
         if self.piece[1] == 'P':
             P = self.pawn()
-            self.move('P',P)
+            self.move('P', P)
+
+        # knight
+        if self.piece[1] == 'k':
+            k = self.knight()
+            self.move('k', k)
+
+        # king
+        if self.piece[1] == 'K':
+            K = self.king()
+            self.move('K', K)
+
+        # rook
+        if self.piece[1] == 'R':
+            R = self.rook()
+            self.move('R', R)
+
+        # bishop
+        if self.piece[1] == 'B':
+            B = self.bishop()
+            self.move('B', B)
+
+        # queen
+        if self.piece[1] == 'Q':
+            Q = self.queen()
+            self.move('Q', Q)
+
+
+
+    # moves the piece for anti chess
+    def moveAntiPiece(self):
+        a = self.x1
+        b = self.y1
+        c = self.x2
+        d = self.y2
+        color = self.color = self.board[self.y1][self.x1][0]
+        piece = self.Piece = self.board[self.y1][self.x1]
+        # pawn
+        if self.piece[1] == 'P':
+            P = self.pawn()
+            if [(self.x1,self.y1),(self.x2,self.y2)] in self.antiChessMoves():
+                self.change(a, b, c, d, color, piece)
+
+                self.move('P',P)
 
 
         # knight
         if self.piece[1] == 'k':
             k = self.knight()
-            self.move('k',k)
+            if [(self.x1, self.y1), (self.x2, self.y2)] in self.antiChessMoves():
+                self.change(a, b, c, d, color, piece)
+
+                self.move('k',k)
 
         # king
         if self.piece[1] == 'K':
             K = self.king()
-            self.move('K',K)
+            if [(self.x1, self.y1), (self.x2, self.y2)] in self.antiChessMoves():
+                self.change(a, b, c, d, color, piece)
+
+                self.move('K',K)
 
          # rook
         if self.piece[1] == 'R':
             R = self.rook()
-            self.move('R',R)
+            if [(self.x1, self.y1), (self.x2, self.y2)] in self.antiChessMoves():
+                self.change(a, b, c, d, color, piece)
+
+                self.move('R',R)
 
         # bishop
         if self.piece[1] == 'B':
             B = self.bishop()
-            self.move('B',B)
+            if [(self.x1, self.y1), (self.x2, self.y2)] in self.antiChessMoves():
+                self.change(a, b, c, d, color, piece)
+
+                self.move('B',B)
 
         # queen
         if self.piece[1] == 'Q':
             Q = self.queen()
-            self.move('Q',Q)
+            if [(a, b), (c, d)] in self.antiChessMoves():
+                self.change(a, b, c, d, color, piece)
+
+                self.move('Q',Q)
 
 
     # True means the game is done
@@ -438,6 +573,22 @@ class Chess:
             return False
         else:
             return True
+
+    # anti chess is done when a player loses all his pieces
+    # the player that loses all pieces is the winner
+    def antiDone(self):
+        white = False
+        black = False
+        for i in self.board:
+            for j in i:
+                if j[0] == 'w':
+                    white = True
+                if j[0] == 'b':
+                    black = True
+        if white == False or black == False:
+            return True
+        else:
+            return False
 
     # alternates between white and black while checking for valid moves
     # stops when either king is dead
